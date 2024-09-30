@@ -33,6 +33,8 @@ impl S3CrtClient {
             self.inner
                 .make_simple_http_request(message, S3Operation::CopyObject, span, parse_delete_object_error)?
         };
+        error!("PRINTING REQUEST");
+        error!("{:?}", request);
 
         let _body = request.await?;
 
