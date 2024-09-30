@@ -98,6 +98,14 @@ pub trait ObjectClient {
         key: &str,
     ) -> ObjectClientResult<DeleteObjectResult, DeleteObjectError, Self::ClientError>;
 
+    async fn copy_object(
+        &self,
+        source_bucket: &str,
+        source_key: &str,
+        destination_bucket: &str,
+        destination_key: &str,
+    ) -> ObjectClientResult<CopyObjectResult, DeleteObjectError, Self::ClientError>;
+
     /// Get an object from the object store. Returns a stream of body parts of the object. Parts are
     /// guaranteed to be returned by the stream in order and contiguously.
     async fn get_object(
@@ -255,6 +263,19 @@ pub struct DeleteObjectResult {}
 #[derive(Debug, Error, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum DeleteObjectError {
+    #[error("The bucket does not exist")]
+    NoSuchBucket,
+}
+
+/// Result of a [`copy_object`](ObjectClient::copy_object) request
+#[derive(Debug)]
+#[non_exhaustive]
+pub struct CopyObjectResult {}
+
+/// Errors returned by a [`copy_object`](ObjectClient::copy_object) request
+#[derive(Debug, Error, PartialEq, Eq)]
+#[non_exhaustive]
+pub enum CopyObjectError {
     #[error("The bucket does not exist")]
     NoSuchBucket,
 }

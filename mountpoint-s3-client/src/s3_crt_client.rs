@@ -55,6 +55,7 @@ macro_rules! request_span {
 }
 
 pub(crate) mod delete_object;
+pub(crate) mod copy_object;
 pub(crate) mod get_object;
 pub(crate) mod get_object_attributes;
 pub(crate) mod head_object;
@@ -794,6 +795,7 @@ enum S3Operation {
     HeadObject,
     ListObjects,
     PutObject,
+    CopyObject,
 }
 
 impl S3Operation {
@@ -802,6 +804,7 @@ impl S3Operation {
         match self {
             S3Operation::GetObject => MetaRequestType::GetObject,
             S3Operation::PutObject => MetaRequestType::PutObject,
+            S3Operation::CopyObject => MetaRequestType::CopyObject,
             _ => MetaRequestType::Default,
         }
     }
@@ -816,6 +819,7 @@ impl S3Operation {
             S3Operation::HeadObject => Some("HeadObject"),
             S3Operation::ListObjects => Some("ListObjectsV2"),
             S3Operation::PutObject => None,
+            S3Operation::CopyObject => None
         }
     }
 }
@@ -1215,6 +1219,17 @@ impl ObjectClient for S3CrtClient {
     ) -> ObjectClientResult<DeleteObjectResult, DeleteObjectError, Self::ClientError> {
         self.delete_object(bucket, key).await
     }
+
+    async fn copy_object(
+        &self,
+        source_bucket: &str,
+        source_key: &str,
+        destination_bucket: &str,
+        destination_key: &str,
+    ) -> ObjectClientResult<CopyObjectResult, DeleteObjectError, S3RequestError> {
+        self.copy_object(source_bucket, source_key, destination_bucket, destination_key).await
+    }
+
 
     async fn get_object(
         &self,

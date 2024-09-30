@@ -24,7 +24,7 @@ use tracing::trace;
 use crate::checksums::crc32c_to_base64;
 use crate::error_metadata::{ClientErrorMetadata, ProvideErrorMetadata};
 use crate::object_client::{
-    Checksum, ChecksumAlgorithm, DeleteObjectError, DeleteObjectResult, ETag, GetBodyPart, GetObjectAttributesError,
+    CopyObjectResult, Checksum, ChecksumAlgorithm, DeleteObjectError, DeleteObjectResult, ETag, GetBodyPart, GetObjectAttributesError,
     GetObjectAttributesParts, GetObjectAttributesResult, GetObjectError, GetObjectRequest, HeadObjectError,
     HeadObjectResult, ListObjectsError, ListObjectsResult, ObjectAttribute, ObjectClient, ObjectClientError,
     ObjectClientResult, ObjectInfo, ObjectPart, PutObjectError, PutObjectParams, PutObjectRequest, PutObjectResult,
@@ -340,6 +340,7 @@ pub enum Operation {
     GetObjectAttributes,
     ListObjectsV2,
     PutObject,
+    CopyObject,
 }
 
 /// Counter for a specific client [Operation].
@@ -587,6 +588,16 @@ impl ObjectClient for MockClient {
         self.remove_object(key);
 
         Ok(DeleteObjectResult {})
+    }
+
+    async fn copy_object(
+        &self,
+        source_bucket: &str,
+        source_key: &str,
+        destination_bucket: &str,
+        destination_key: &str,
+    ) -> ObjectClientResult<CopyObjectResult, DeleteObjectError, Self::ClientError> {
+        Ok(CopyObjectResult {})
     }
 
     async fn get_object(
