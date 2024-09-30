@@ -1,6 +1,6 @@
 use std::ops::Deref;
 use std::os::unix::prelude::OsStrExt;
-
+use tracing::error;
 use mountpoint_s3_crt::{http::request_response::Header, s3::client::MetaRequestResult};
 
 use crate::object_client::{CopyObjectError, DeleteObjectError, CopyObjectResult, ObjectClientResult};
@@ -41,6 +41,8 @@ impl S3CrtClient {
 }
 
 fn parse_delete_object_error(result: &MetaRequestResult) -> Option<DeleteObjectError> {
+    error!("rajdchak");
+    error!("{:?}", result);
     match result.response_status {
         404 => {
             let body = result.error_response_body.as_ref()?;
