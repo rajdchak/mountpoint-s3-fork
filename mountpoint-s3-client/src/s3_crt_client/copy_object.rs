@@ -21,7 +21,7 @@ impl S3CrtClient {
         let request = {
             let mut message = self
                 .inner
-                .new_request_template("COPY", destination_bucket)
+                .new_request_template("PUT", destination_bucket)
                 .map_err(S3RequestError::construction_failure)?;
             message
                 .set_request_path(format!("/{destination_key}"))
