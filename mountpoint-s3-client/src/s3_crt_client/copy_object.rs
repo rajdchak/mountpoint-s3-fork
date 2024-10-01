@@ -87,6 +87,9 @@ impl S3CrtClient {
                                                        move |headers, _status| {
                                                            error!("rajdchak headers");
                                                            error!(headers = ?headers);
+                                                           for (key, value) in headers.iter() {
+                                                               error!("Header: {:?}: {:?}", key, value);
+                                                           }
                                                        },
                 )?
         };
