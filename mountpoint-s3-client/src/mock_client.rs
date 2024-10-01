@@ -597,16 +597,16 @@ impl ObjectClient for MockClient {
         destination_bucket: &str,
         destination_key: &str,
     ) -> ObjectClientResult<CopyObjectResult, DeleteObjectError, Self::ClientError> {
-        let etag = "";
+        let etag: Option<String> = Some("mock-etag".to_string());
         let last_modified = OffsetDateTime::now_utc();
 
         // S3 appears to use RFC 3339 to encode this field, based on the API example here:
         // https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListObjectsV2.html
 
-        let checksum_crc32 = "";
-        let checksum_crc32c = "";
-        let checksum_sha1 = "";
-        let checksum_sha256 = "";
+        let checksum_crc32: Option<String> = Some("mock-etag".to_string());
+        let checksum_crc32c: Option<String> = Some("mock-etag".to_string());
+        let checksum_sha1: Option<String> = Some("mock-etag".to_string());
+        let checksum_sha256: Option<String> = Some("mock-etag".to_string());
 
         Ok(CopyObjectResult {
             etag,
