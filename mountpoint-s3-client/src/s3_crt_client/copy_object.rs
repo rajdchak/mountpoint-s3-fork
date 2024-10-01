@@ -1,11 +1,59 @@
 use std::ops::Deref;
 use std::os::unix::prelude::OsStrExt;
 use tracing::error;
-use mountpoint_s3_crt::{http::request_response::Header, s3::client::MetaRequestResult};
+use std::str::FromStr;
+use time::format_description::well_known::Rfc3339;
+use time::OffsetDateTime;
 
-use crate::object_client::{CopyObjectError, DeleteObjectError, CopyObjectResult, ObjectClientResult};
+use mountpoint_s3_crt::{http::request_response::Header, s3::client::MetaRequestResult};
+use thiserror::Error;
+
+use crate::object_client::{CopyObjectError, DeleteObjectError, CopyObjectResult, ObjectClientResult, ObjectClientError};
 use crate::s3_crt_client::{S3CrtClient, S3Operation, S3RequestError};
 
+#[derive(Error, Debug)]
+#[non_exhaustive]
+pub enum ParseError {
+    #[error("XML response was not valid: problem = {1}, xml node = {0:?}")]
+    InvalidResponse(xmltree::Element, String),
+
+    #[error("XML parsing error: {0:?}")]
+    Xml(#[from] xmltree::ParseError),
+
+    #[error("Missing field {1} from XML element {0:?}")]
+    MissingField(xmltree::Element, String),
+
+    #[error("Failed to parse field {1} as OffsetDateTime: {0:?}")]
+    OffsetDateTime(#[source] time::error::Parse, String),
+}
+impl CopyObjectResult {
+    fn parse_from_bytes(bytes: &[u8]) -> Result<Self, ParseError> {
+        Self::parse_from_xml(&mut xmltree::Element::parse(bytes)?)
+    }
+
+    fn parse_from_xml(element: &mut xmltree::Element) -> Result<Self, ParseError> {
+        let etag = get_field_or_none(element, "ETag")?;
+        let last_modified = get_field(element, "LastModified")?;
+
+        // S3 appears to use RFC 3339 to encode this field, based on the API example here:
+        // https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListObjectsV2.html
+        let last_modified = OffsetDateTime::parse(&last_modified, &Rfc3339)
+            .map_err(|e| ParseError::OffsetDateTime(e, "LastModified".to_string()))?;
+        let checksum_crc32 = get_field_or_none(element, "ChecksumCRC32")?;
+        let checksum_crc32c = get_field_or_none(element, "ChecksumCRC32C")?;
+        let checksum_sha1 = get_field_or_none(element, "ChecksumSHA1")?;
+        let checksum_sha256 = get_field_or_none(element, "ChecksumSHA256")?;
+
+        Ok(Self {
+            etag,
+            last_modified,
+            checksum_crc32,
+            checksum_crc32c,
+            checksum_sha1,
+            checksum_sha256,
+        })
+    }
+}
 impl S3CrtClient {
     /// Create and begin a new DeleteObject request.
     pub(super) async fn copy_object(
@@ -36,12 +84,36 @@ impl S3CrtClient {
         error!("PRINTING REQUEST");
         error!("{:?}", request);
 
-        let _body = request.await?;
+        let body = request.await?;
 
-        Ok(CopyObjectResult {})
+        CopyObjectResult::parse_from_bytes(&body)
+            .map_err(|e| ObjectClientError::ClientError(S3RequestError::InternalError(e.into())))
     }
 }
-
+fn get_field_or_none<T: FromStr>(element: &xmltree::Element, name: &str) -> Result<Option<T>, ParseError> {
+    match get_field(element, name) {
+        Ok(str) => str
+            .parse::<T>()
+            .map(Some)
+            .map_err(|_| ParseError::InvalidResponse(element.clone(), "failed to parse field from string".to_owned())),
+        Err(ParseError::MissingField(_, _)) => Ok(None),
+        Err(e) => Err(e),
+    }
+}
+fn get_field(element: &xmltree::Element, name: &str) -> Result<String, ParseError> {
+    get_text(get_child(element, name)?)
+}
+fn get_text(element: &xmltree::Element) -> Result<String, ParseError> {
+    Ok(element
+        .get_text()
+        .ok_or_else(|| ParseError::InvalidResponse(element.clone(), "field has no text".to_string()))?
+        .to_string())
+}
+fn get_child<'a>(element: &'a xmltree::Element, name: &str) -> Result<&'a xmltree::Element, ParseError> {
+    element
+        .get_child(name)
+        .ok_or_else(|| ParseError::MissingField(element.clone(), name.to_string()))
+}
 fn parse_delete_object_error(result: &MetaRequestResult) -> Option<DeleteObjectError> {
     error!("rajdchak");
     error!("{:?}", result);

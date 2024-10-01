@@ -270,14 +270,32 @@ pub enum DeleteObjectError {
 /// Result of a [`copy_object`](ObjectClient::copy_object) request
 #[derive(Debug)]
 #[non_exhaustive]
-pub struct CopyObjectResult {}
+pub struct CopyObjectResult {
+    /// ETag of the object
+    pub etag: Option<String>,
+
+    /// ChecksumCRC32 of the object
+    pub checksum_crc32: Option<String>,
+
+    /// ChecksumCRC32C of the object
+    pub checksum_crc32c: Option<String>,
+
+    /// ChecksumSHA1 of the object
+    pub checksum_sha1: Option<String>,
+
+    /// ChecksumSHA256 of the object
+    pub checksum_sha256: Option<String>,
+
+    /// Last modified timestamp of the object
+    pub last_modified: OffsetDateTime,
+}
 
 /// Errors returned by a [`copy_object`](ObjectClient::copy_object) request
 #[derive(Debug, Error, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum CopyObjectError {
-    #[error("The bucket does not exist")]
-    NoSuchBucket,
+    #[error("The source object of the COPY action is not in the active tier and is only stored in Amazon S3 Glacier.")]
+    ObjectNotInActiveTierError,
 }
 
 /// Result of a [`get_object_attributes`](ObjectClient::get_object_attributes) request
