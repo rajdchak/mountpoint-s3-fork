@@ -1058,6 +1058,7 @@ fn request_type_to_metrics_string(request_type: RequestType) -> &'static str {
         RequestType::AbortMultipartUpload => "AbortMultipartUpload",
         RequestType::CompleteMultipartUpload => "CompleteMultipartUpload",
         RequestType::UploadPartCopy => "UploadPartCopy",
+        RequestType::CopyObject => "CopyObject",
     }
 }
 
