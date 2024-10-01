@@ -89,6 +89,8 @@ impl S3CrtClient {
         error!("{:?}", request);
 
         let request = request.await?;
+        error!("rajdchak result");
+        error!("{:?}", request);
         CopyObjectResult::parse_from_bytes(&request)
             .map_err(|e| ObjectClientError::ClientError(S3RequestError::InternalError(e.into())))
 
