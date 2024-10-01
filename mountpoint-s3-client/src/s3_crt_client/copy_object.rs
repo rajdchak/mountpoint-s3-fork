@@ -84,13 +84,13 @@ impl S3CrtClient {
                                                        span,
                                                        |_| {},
                                                        parse_delete_object_error,
-                                                       move |headers, _status| {
+                                                       move |headers, _body| {
                                                            error!("rajdchak headers");
                                                            error!(headers = ?headers);
                                                            for (key, value) in headers.iter() {
                                                                error!("Header: {:?}: {:?}", key, value);
                                                            }
-                                                           error!("Response status: {:?}", _status);
+                                                           error!("Response status: {:?}", _body);
                                                        },
                 )?
         };
