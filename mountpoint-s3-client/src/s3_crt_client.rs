@@ -522,6 +522,10 @@ impl S3CrtClientInner {
         self.make_meta_request_from_options(options, request_span, |_| {}, on_headers, on_body, on_finish)
     }
 
+    fn process_result<T: std::fmt::Debug>(result: T) {
+        error!("{:?}", result); // Now this will work
+    }
+
     /// Make an HTTP request using this S3 client that invokes the given callbacks as the request
     /// makes progress. See [make_meta_request] for arguments.
     fn make_meta_request_from_options<T: Send + 'static, E: std::error::Error + Send + 'static>(
@@ -640,9 +644,10 @@ impl S3CrtClientInner {
                 // The `on_finish` callback has a choice of whether to give us an error or not. If
                 // not, fall back to generic error parsing (e.g. for permissions errors), or just no
                 // error if that fails too.
-                let result = on_meta_request_finish(&request_result);
                 error!("rajdchak meta result");
-                error!("{:?}", result);
+                error!("{:?}", &request_result);
+                let result = on_meta_request_finish(&request_result);
+
                 let result = result.map_err(|e| e.or_else(|| try_parse_generic_error(&request_result).map(ObjectClientError::ClientError)));
                 let result = match result {
                     Ok(t) => {
