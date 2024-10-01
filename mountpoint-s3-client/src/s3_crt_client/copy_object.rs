@@ -63,10 +63,9 @@ impl S3CrtClient {
         destination_bucket: &str,
         destination_key: &str,
     ) -> ObjectClientResult<CopyObjectResult, DeleteObjectError, S3RequestError> {
-        let span = request_span!(self.inner, "copy_object", source_bucket, source_key, destination_bucket, destination_key);
 
         // Scope the endpoint, message, etc. since otherwise rustc thinks we use Message across the await.
-        let request = {
+        let body = {
             let mut message = self
                 .inner
                 .new_request_template("PUT", destination_bucket)
@@ -78,15 +77,15 @@ impl S3CrtClient {
                 .set_header(&Header::new("x-amz-copy-source", format!("/{source_bucket}/{source_key}")))
                 .map_err(S3RequestError::construction_failure)?;
 
+            let span = request_span!(self.inner, "copy_object", source_bucket, source_key, destination_bucket, destination_key);
+
             self.inner
                 .make_simple_http_request(message, S3Operation::CopyObject, span, parse_delete_object_error)?
         };
         error!("PRINTING REQUEST");
-        error!("{:?}", request);
+        error!("{:?}", body);
 
-        let body = request.await?;
-
-        error!("Response Body: {:?}", std::str::from_utf8(&body).unwrap_or("Invalid UTF-8"));
+        let body = body.await?;
 
         CopyObjectResult::parse_from_bytes(&body)
             .map_err(|e| ObjectClientError::ClientError(S3RequestError::InternalError(e.into())))
