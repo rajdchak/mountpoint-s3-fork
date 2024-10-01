@@ -86,6 +86,8 @@ impl S3CrtClient {
 
         let body = request.await?;
 
+        error!("Response Body: {:?}", std::str::from_utf8(&body).unwrap_or("Invalid UTF-8"));
+
         CopyObjectResult::parse_from_bytes(&body)
             .map_err(|e| ObjectClientError::ClientError(S3RequestError::InternalError(e.into())))
     }
