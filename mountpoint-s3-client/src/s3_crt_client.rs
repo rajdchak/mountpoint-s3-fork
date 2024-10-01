@@ -641,6 +641,8 @@ impl S3CrtClientInner {
                 // not, fall back to generic error parsing (e.g. for permissions errors), or just no
                 // error if that fails too.
                 let result = on_meta_request_finish(&request_result);
+                error!("rajdchak meta result");
+                error!("{:?}", result);
                 let result = result.map_err(|e| e.or_else(|| try_parse_generic_error(&request_result).map(ObjectClientError::ClientError)));
                 let result = match result {
                     Ok(t) => {
