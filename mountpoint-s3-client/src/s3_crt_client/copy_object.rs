@@ -9,7 +9,7 @@ use mountpoint_s3_crt::{http::request_response::Header, s3::client::MetaRequestR
 use thiserror::Error;
 
 use crate::object_client::{CopyObjectError, DeleteObjectError, CopyObjectResult, ObjectClientResult, ObjectClientError};
-use crate::s3_crt_client::{S3CrtClient, S3Operation, S3RequestError};
+use crate::s3_crt_client::{S3CrtClient, S3Operation, S3RequestError, S3CrtClientInner};
 
 #[derive(Error, Debug)]
 #[non_exhaustive]
@@ -65,7 +65,7 @@ impl S3CrtClient {
     ) -> ObjectClientResult<CopyObjectResult, DeleteObjectError, S3RequestError> {
 
         // Scope the endpoint, message, etc. since otherwise rustc thinks we use Message across the await.
-        let body = {
+        let request = {
             let mut message = self
                 .inner
                 .new_request_template("PUT", destination_bucket)
@@ -78,17 +78,26 @@ impl S3CrtClient {
                 .map_err(S3RequestError::construction_failure)?;
 
             let span = request_span!(self.inner, "copy_object", source_bucket, source_key, destination_bucket, destination_key);
-
+            let mut options = S3CrtClientInner::new_meta_request_options(message, S3Operation::CopyObject);
             self.inner
-                .make_simple_http_request(message, S3Operation::CopyObject, span, parse_delete_object_error)?
+                .make_simple_http_request_from_options(options,
+                                                       span,
+                                                       |_| {},
+                                                       parse_delete_object_error,
+                                                       move |headers, _status| {
+                                                           error!("rajdchak headers");
+                                                           error!(headers = ?headers);
+                                                       },
+                )?
         };
         error!("PRINTING REQUEST");
-        error!("{:?}", body);
+        error!("{:?}", request);
 
-        let body = body.await?;
-
+        let body = request.await?;
         CopyObjectResult::parse_from_bytes(&body)
             .map_err(|e| ObjectClientError::ClientError(S3RequestError::InternalError(e.into())))
+
+
     }
 }
 fn get_field_or_none<T: FromStr>(element: &xmltree::Element, name: &str) -> Result<Option<T>, ParseError> {
