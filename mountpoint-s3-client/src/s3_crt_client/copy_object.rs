@@ -90,6 +90,7 @@ impl S3CrtClient {
                                                            for (key, value) in headers.iter() {
                                                                error!("Header: {:?}: {:?}", key, value);
                                                            }
+                                                           error!("Response status: {:?}", _status);
                                                        },
                 )?
         };
