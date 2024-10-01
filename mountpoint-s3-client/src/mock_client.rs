@@ -597,7 +597,26 @@ impl ObjectClient for MockClient {
         destination_bucket: &str,
         destination_key: &str,
     ) -> ObjectClientResult<CopyObjectResult, DeleteObjectError, Self::ClientError> {
-        Ok(CopyObjectResult {})
+        let etag = "";
+        let last_modified = OffsetDateTime::now_utc();
+
+        // S3 appears to use RFC 3339 to encode this field, based on the API example here:
+        // https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListObjectsV2.html
+
+        let checksum_crc32 = "";
+        let checksum_crc32c = "";
+        let checksum_sha1 = "";
+        let checksum_sha256 = "";
+
+        Ok(CopyObjectResult {
+            etag,
+            last_modified,
+            checksum_crc32,
+            checksum_crc32c,
+            checksum_sha1,
+            checksum_sha256,
+        })
+
     }
 
     async fn get_object(
