@@ -10,6 +10,7 @@ use thiserror::Error;
 
 use crate::object_client::{CopyObjectError, DeleteObjectError, CopyObjectResult, ObjectClientResult, ObjectClientError};
 use crate::s3_crt_client::{S3CrtClient, S3Operation, S3RequestError, S3CrtClientInner};
+use futures::StreamExt;
 
 #[derive(Error, Debug)]
 #[non_exhaustive]
@@ -78,25 +79,37 @@ impl S3CrtClient {
                 .map_err(S3RequestError::construction_failure)?;
 
             let span = request_span!(self.inner, "copy_object", source_bucket, source_key, destination_bucket, destination_key);
-            self.inner.make_simple_http_request(
-                message,
-                S3Operation::CopyObject,
-                span,
-                parse_delete_object_error,
-            )?
+            let mut options = S3CrtClientInner::new_meta_request_options(message, S3Operation::CopyObject);
+            self.inner
+                .make_simple_http_request_from_options(options,
+                                                       span,
+                                                       |_| {},
+                                                       parse_delete_object_error,
+                                                       move |headers, _body| {
+                                                           error!("rajdchak headers");
+                                                           error!(headers = ?headers);
+                                                           for (key, value) in headers.iter() {
+                                                               error!("Header: {:?}: {:?}", key, value);
+                                                           }
+                                                           error!("Response status: {:?}", _body);
+                                                       },
+                )?
         };
         error!("PRINTING REQUEST");
         error!("{:?}", request);
 
         let request = request.await?;
-        error!("rajdchak result");
-        error!("{:?}", request);
+
+        error!("PRINTING REQUEST AGAIN");
+        error!("{:?}", &request);
+
         CopyObjectResult::parse_from_bytes(&request)
             .map_err(|e| ObjectClientError::ClientError(S3RequestError::InternalError(e.into())))
 
 
     }
 }
+
 fn get_field_or_none<T: FromStr>(element: &xmltree::Element, name: &str) -> Result<Option<T>, ParseError> {
     match get_field(element, name) {
         Ok(str) => str

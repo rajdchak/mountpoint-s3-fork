@@ -10,11 +10,11 @@ use mountpoint_s3_client::{ObjectClient, S3CrtClient};
 #[tokio::test]
 async fn test_copy_objects() {
     let sdk_client = get_test_sdk_client().await;
-    let (bucket, prefix1) = ("copy-rajdchak1", "prefix1/hello");
+    let (bucket, prefix1) = ("copy-rajdchak1", "prefix1/largefile");
 
     let client: S3CrtClient = get_test_client();
 
-    match client.copy_object(&bucket, &prefix1, &bucket, "prefix1/hello2").await {
+    match client.copy_object(&bucket, &prefix1, &bucket, "prefix1/largefile2020").await {
         Ok(result) => info!("Copy operation successful: {:?}", result),
         Err(e) => error!("Error during copy operation: {:?}", e),
     }
