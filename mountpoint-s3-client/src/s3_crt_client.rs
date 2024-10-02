@@ -605,6 +605,8 @@ impl S3CrtClientInner {
                     metrics::histogram!("s3.meta_requests.first_byte_latency_us", "op" => op).record(latency);
                 }
                 total_bytes.fetch_add(data.len() as u64, Ordering::SeqCst);
+                error!("rajdchak printing the body");
+                error!(data);
 
                 trace!(start = range_start, length = data.len(), "body part received");
 
