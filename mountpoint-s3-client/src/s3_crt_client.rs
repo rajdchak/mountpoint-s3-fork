@@ -606,7 +606,7 @@ impl S3CrtClientInner {
                 }
                 total_bytes.fetch_add(data.len() as u64, Ordering::SeqCst);
                 error!("rajdchak printing the body");
-                error!(data);
+                error!("{:?}", data);
 
                 trace!(start = range_start, length = data.len(), "body part received");
 
