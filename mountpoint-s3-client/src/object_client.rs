@@ -273,21 +273,6 @@ pub enum DeleteObjectError {
 pub struct CopyObjectResult {
     /// ETag of the object
     pub etag: Option<String>,
-
-    /// ChecksumCRC32 of the object
-    pub checksum_crc32: Option<String>,
-
-    /// ChecksumCRC32C of the object
-    pub checksum_crc32c: Option<String>,
-
-    /// ChecksumSHA1 of the object
-    pub checksum_sha1: Option<String>,
-
-    /// ChecksumSHA256 of the object
-    pub checksum_sha256: Option<String>,
-
-    /// Last modified timestamp of the object
-    pub last_modified: OffsetDateTime,
 }
 
 /// Errors returned by a [`copy_object`](ObjectClient::copy_object) request
