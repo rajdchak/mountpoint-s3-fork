@@ -747,6 +747,9 @@ impl S3CrtClientInner {
             on_headers,
             move |offset, data| {
                 let mut body = body_clone.lock().unwrap();
+                error!("rajdchak printing body from make simple");
+                error!("body is {:?}", body);
+                error!("data is {:?}", data);
                 assert_eq!(offset as usize, body.len());
                 body.extend_from_slice(data);
             },
