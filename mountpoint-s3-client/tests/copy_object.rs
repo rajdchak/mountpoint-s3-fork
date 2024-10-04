@@ -6,6 +6,8 @@ use tracing::error;
 use common::*;
 use mountpoint_s3_client::error::{ObjectClientError};
 use mountpoint_s3_client::{ObjectClient, S3CrtClient};
+use aws_sdk_s3::primitives::ByteStream;
+use bytes::Bytes;
 
 #[tokio::test]
 async fn test_copy_objects_old() {
