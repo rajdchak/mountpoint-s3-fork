@@ -7,7 +7,7 @@ use crate::object_client::{CopyObjectError, CopyObjectResult, ObjectClientResult
 use crate::s3_crt_client::{S3CrtClient, S3Operation, S3RequestError};
 
 impl S3CrtClient {
-    /// Create and begin a new DeleteObject request.
+    /// Create and begin a new CopyObject request.
     pub(super) async fn copy_object(
         &self,
         source_bucket: &str,
