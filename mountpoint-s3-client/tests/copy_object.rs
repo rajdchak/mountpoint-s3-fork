@@ -1,8 +1,6 @@
 #![cfg(feature = "s3_tests")]
 
 pub mod common;
-use tracing::info;
-use tracing::error;
 use common::*;
 use mountpoint_s3_client::error::{ObjectClientError};
 use mountpoint_s3_client::{ObjectClient, S3CrtClient};
@@ -34,7 +32,7 @@ async fn test_copy_objects() {
         .await
         .expect("copy_object operation should succeed");
 
-    let head_obj = sdk_client
+    sdk_client
         .head_object()
         .bucket(&bucket)
         .key(&copy_key)
