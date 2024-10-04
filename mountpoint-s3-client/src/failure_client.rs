@@ -100,7 +100,7 @@ where
         source_key: &str,
         destination_bucket: &str,
         destination_key: &str,
-    ) -> ObjectClientResult<CopyObjectResult, DeleteObjectError, Self::ClientError> {
+    ) -> ObjectClientResult<CopyObjectResult, CopyObjectError, Self::ClientError> {
         self.client
             .copy_object(source_bucket, source_key, destination_bucket, destination_key)
             .await

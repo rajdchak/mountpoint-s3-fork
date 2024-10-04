@@ -24,7 +24,7 @@ use tracing::trace;
 use crate::checksums::crc32c_to_base64;
 use crate::error_metadata::{ClientErrorMetadata, ProvideErrorMetadata};
 use crate::object_client::{
-    CopyObjectResult, Checksum, ChecksumAlgorithm, DeleteObjectError, DeleteObjectResult, ETag, GetBodyPart, GetObjectAttributesError,
+    CopyObjectResult, CopyObjectError, Checksum, ChecksumAlgorithm, DeleteObjectError, DeleteObjectResult, ETag, GetBodyPart, GetObjectAttributesError,
     GetObjectAttributesParts, GetObjectAttributesResult, GetObjectError, GetObjectRequest, HeadObjectError,
     HeadObjectResult, ListObjectsError, ListObjectsResult, ObjectAttribute, ObjectClient, ObjectClientError,
     ObjectClientResult, ObjectInfo, ObjectPart, PutObjectError, PutObjectParams, PutObjectRequest, PutObjectResult,
@@ -102,6 +102,16 @@ impl MockClient {
     /// Remove object for the mock client's bucket
     pub fn remove_object(&self, key: &str) {
         self.objects.write().unwrap().remove(key);
+    }
+    pub fn copy_key_value(&self, src_key: &str, dest_key: &str) ->  Result<(), MockClientError> {
+        let mut objects = self.objects.write().unwrap();
+        if let Some(object) = objects.get(src_key) {
+            let cloned_object = object.clone();
+            objects.insert(dest_key.to_owned(), cloned_object);
+            Ok(())
+        } else {
+            Err(MockClientError("Source key not found".into()))
+        }
     }
 
     /// Returns `true` if this mock client's bucket contains the specified key
@@ -596,13 +606,21 @@ impl ObjectClient for MockClient {
         source_key: &str,
         destination_bucket: &str,
         destination_key: &str,
-    ) -> ObjectClientResult<CopyObjectResult, DeleteObjectError, Self::ClientError> {
-        let etag: Option<String> = Some("mock-etag".to_string());
+    ) -> ObjectClientResult<CopyObjectResult, CopyObjectError, Self::ClientError> {
 
-        Ok(CopyObjectResult {
-            etag,
-        })
+        if destination_bucket != self.config.bucket && source_bucket != self.config.bucket {
+            return Err(ObjectClientError::ServiceError(CopyObjectError::NoSuchBucket));
+        }
 
+        match self.copy_key_value(source_key, destination_key) {
+            Ok(()) => {
+                Ok(CopyObjectResult {
+                })
+            }
+            Err(err) => {
+                Err(ObjectClientError::ClientError(err))
+            }
+        }
     }
 
     async fn get_object(
@@ -1131,6 +1149,29 @@ mod tests {
         // This await should return an error because current window is not enough to get the next part
         let next = get_request.next().await.expect("result should not be empty");
         assert_client_error!(next, "empty read window");
+    }
+    #[tokio::test]
+    async fn test_copy_object() {
+        let bucket = "test_bucket";
+        let src_key = "src_copy_key";
+        let dst_key = "dst_copy_key";
+        let client = MockClient::new(MockClientConfig {
+            bucket: bucket.to_string(),
+            part_size: 1024,
+            unordered_list_seed: None,
+            ..Default::default()
+        });
+
+        let mut rng = ChaChaRng::seed_from_u64(0x12345678);
+        let bucket = "test_bucket";
+        let mut body = vec![0u8; 10];
+        rng.fill_bytes(&mut body);
+
+        {
+            client.add_object(src_key, MockObject::from_bytes(&[], ETag::for_tests()));
+        }
+
+        client.copy_object(bucket, src_key, bucket, dst_key).await.expect("Should not fail");
     }
 
     #[tokio::test]

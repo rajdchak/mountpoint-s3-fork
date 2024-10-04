@@ -521,11 +521,6 @@ impl S3CrtClientInner {
         let options = Self::new_meta_request_options(message, operation);
         self.make_meta_request_from_options(options, request_span, |_| {}, on_headers, on_body, on_finish)
     }
-
-    fn process_result<T: std::fmt::Debug>(result: T) {
-        error!("{:?}", result); // Now this will work
-    }
-
     /// Make an HTTP request using this S3 client that invokes the given callbacks as the request
     /// makes progress. See [make_meta_request] for arguments.
     fn make_meta_request_from_options<T: Send + 'static, E: std::error::Error + Send + 'static>(
@@ -605,8 +600,6 @@ impl S3CrtClientInner {
                     metrics::histogram!("s3.meta_requests.first_byte_latency_us", "op" => op).record(latency);
                 }
                 total_bytes.fetch_add(data.len() as u64, Ordering::SeqCst);
-                error!("rajdchak printing the body");
-                error!("{:?}", data);
 
                 trace!(start = range_start, length = data.len(), "body part received");
 
@@ -646,8 +639,6 @@ impl S3CrtClientInner {
                 // The `on_finish` callback has a choice of whether to give us an error or not. If
                 // not, fall back to generic error parsing (e.g. for permissions errors), or just no
                 // error if that fails too.
-                error!("rajdchak meta result");
-                error!("{:?}", &request_result);
                 let result = on_meta_request_finish(&request_result);
 
                 let result = result.map_err(|e| e.or_else(|| try_parse_generic_error(&request_result).map(ObjectClientError::ClientError)));
@@ -747,9 +738,6 @@ impl S3CrtClientInner {
             on_headers,
             move |offset, data| {
                 let mut body = body_clone.lock().unwrap();
-                error!("rajdchak printing body from make simple");
-                error!("body is {:?}", body);
-                error!("data is {:?}", data);
                 assert_eq!(offset as usize, body.len());
                 body.extend_from_slice(data);
             },
@@ -1239,7 +1227,7 @@ impl ObjectClient for S3CrtClient {
         source_key: &str,
         destination_bucket: &str,
         destination_key: &str,
-    ) -> ObjectClientResult<CopyObjectResult, DeleteObjectError, S3RequestError> {
+    ) -> ObjectClientResult<CopyObjectResult, CopyObjectError, S3RequestError> {
         self.copy_object(source_bucket, source_key, destination_bucket, destination_key).await
     }
 

@@ -104,7 +104,7 @@ pub trait ObjectClient {
         source_key: &str,
         destination_bucket: &str,
         destination_key: &str,
-    ) -> ObjectClientResult<CopyObjectResult, DeleteObjectError, Self::ClientError>;
+    ) -> ObjectClientResult<CopyObjectResult, CopyObjectError, Self::ClientError>;
 
     /// Get an object from the object store. Returns a stream of body parts of the object. Parts are
     /// guaranteed to be returned by the stream in order and contiguously.
@@ -271,14 +271,16 @@ pub enum DeleteObjectError {
 #[derive(Debug)]
 #[non_exhaustive]
 pub struct CopyObjectResult {
-    /// ETag of the object
-    pub etag: Option<String>,
+    // TODO: Populate this struct with return fields from the S3 API, e.g., etag.
 }
 
 /// Errors returned by a [`copy_object`](ObjectClient::copy_object) request
 #[derive(Debug, Error, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum CopyObjectError {
+    #[error("The bucket does not exist")]
+    NoSuchBucket,
+
     #[error("The source object of the COPY action is not in the active tier and is only stored in Amazon S3 Glacier.")]
     ObjectNotInActiveTierError,
 }
