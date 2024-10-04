@@ -15,7 +15,6 @@ async fn test_copy_objects() {
     let (bucket, prefix) = get_test_bucket_and_prefix("test_copy_object_prefix1");
 
     let key = format!("{prefix}/hello");
-    let copy_key = format!("{prefix}/hello2");
     let body = b"hello world!";
     sdk_client
         .put_object()
@@ -27,6 +26,7 @@ async fn test_copy_objects() {
         .unwrap();
 
     let copy_prefix = get_unique_test_prefix("test_copy_object_prefix2");
+    let copy_key = format!("{copy_prefix}/hello2");
 
     let client: S3CrtClient = get_test_client();
     let _result = client
