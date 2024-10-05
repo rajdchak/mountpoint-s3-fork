@@ -7,6 +7,10 @@ use mountpoint_s3_client::{ObjectClient, S3CrtClient};
 use aws_sdk_s3::primitives::ByteStream;
 use bytes::Bytes;
 use mountpoint_s3_client::S3RequestError;
+use mountpoint_s3_client::config::{EndpointConfig, S3ClientAuthConfig, S3ClientConfig};
+use common::creds::{get_sdk_default_chain_creds, get_subsession_iam_role};
+use mountpoint_s3_crt::auth::credentials::{CredentialsProvider, CredentialsProviderStaticOptions};
+use mountpoint_s3_crt::common::allocator::Allocator;
 #[tokio::test]
 async fn test_copy_objects() {
     let sdk_client = get_test_sdk_client().await;
