@@ -23,10 +23,23 @@ async fn test_copy_objects() {
         .await
         .unwrap();
 
+    let credentials = get_sdk_default_chain_creds().await;
+
+    // Build a S3CrtClient that uses a static credentials provider with the creds we just got
+    let config = CredentialsProviderStaticOptions {
+        access_key_id: credentials.access_key_id(),
+        secret_access_key: credentials.secret_access_key(),
+        session_token: credentials.session_token(),
+    };
+    let provider = CredentialsProvider::new_static(&Allocator::default(), config).unwrap();
+    let config = S3ClientConfig::new()
+        .auth_config(S3ClientAuthConfig::Provider(provider))
+        .endpoint_config(EndpointConfig::new(&get_test_region()));
+    let client = S3CrtClient::new(config).unwrap();
+
     let copy_prefix = get_unique_test_prefix("test_copy_object_prefix2");
     let copy_key = format!("{copy_prefix}/hello2");
 
-    let client: S3CrtClient = get_test_client();
     let _result = client
         .copy_object(&bucket, &key, &bucket, &copy_key)
         .await
